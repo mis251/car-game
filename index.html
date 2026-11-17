@@ -2,49 +2,215 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Turbo Lane – Car Racing Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#070b16" />
+  <meta name="description" content="Turbo Lane – a fast arcade highway racer. Dodge traffic, chain near misses, fire nitro and unlock new cars." />
+  <title>Turbo Lane – Highway Racer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="game-wrapper">
-    <div id="hud">
-      <div class="hud-item">Score <span id="score">0</span></div>
-      <div class="hud-item">Speed <span id="speed">0</span> km/h</div>
-      <div class="hud-item">Best <span id="best">0</span></div>
-      <div class="hud-item" id="lives">❤❤❤</div>
-    </div>
+  <div id="app">
+    <div id="game-wrapper">
+      <canvas id="game" aria-label="Turbo Lane game"></canvas>
 
-    <canvas id="game" width="400" height="640"></canvas>
+      <!-- ================= HUD ================= -->
+      <div id="hud" class="hidden">
+        <div class="hud-top">
+          <div class="hud-panel">
+            <div class="hud-label">SCORE</div>
+            <div id="score" class="hud-value">0</div>
+            <div class="hud-sub"><span id="distance">0.00</span> KM · LVL <span id="level">1</span></div>
+          </div>
+          <div class="hud-panel right">
+            <div id="lives" class="lives"></div>
+            <div class="hud-coins"><i class="coin-ico"></i><span id="coins">0</span></div>
+          </div>
+        </div>
 
-    <div id="start-screen" class="overlay">
-      <h1>TURBO LANE</h1>
-      <p>Dodge traffic, collect coins, and survive as long as you can!</p>
-      <div class="controls">
-        <p><b>← →</b> or <b>A / D</b> — steer</p>
-        <p><b>↑ / W</b> — boost &nbsp; <b>↓ / S</b> — brake</p>
-        <p><b>P</b> — pause</p>
-        <p>On mobile: tap the buttons below</p>
+        <div id="combo" class="combo hidden">
+          <div class="combo-val">x<span id="combo-val">2</span></div>
+          <div class="combo-label">NEAR MISS</div>
+          <div class="combo-bar"><div id="combo-fill"></div></div>
+        </div>
+
+        <div id="powerups" class="powerups">
+          <div class="pu-chip pu-shield hidden" data-pu="shield"><b>SHIELD</b><div class="pu-bar"><i></i></div></div>
+          <div class="pu-chip pu-magnet hidden" data-pu="magnet"><b>MAGNET</b><div class="pu-bar"><i></i></div></div>
+          <div class="pu-chip pu-slowmo hidden" data-pu="slowmo"><b>SLOW-MO</b><div class="pu-bar"><i></i></div></div>
+        </div>
+
+        <div class="hud-bottom">
+          <div class="speedo">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <defs>
+                <linearGradient id="speedGrad" x1="0" x2="1">
+                  <stop offset="0" stop-color="#22d3ee" />
+                  <stop offset="0.6" stop-color="#facc15" />
+                  <stop offset="1" stop-color="#f43f5e" />
+                </linearGradient>
+              </defs>
+              <path class="speedo-track" d="M 25.4 94.6 A 49 49 0 1 1 94.6 94.6" pathLength="100" />
+              <path id="speedo-arc" class="speedo-arc" d="M 25.4 94.6 A 49 49 0 1 1 94.6 94.6" pathLength="100" />
+            </svg>
+            <div class="speedo-val"><span id="speed">0</span><small>KM/H</small></div>
+          </div>
+          <div class="nitro">
+            <div class="nitro-label">NITRO <small>SPACE</small></div>
+            <div class="nitro-bar"><div id="nitro-fill"></div></div>
+          </div>
+        </div>
+
+        <button id="pause-btn" class="icon-btn" aria-label="Pause">❚❚</button>
+        <button id="cam-btn" class="icon-btn cam-btn" aria-label="Switch camera" title="Switch camera (C)">🎥</button>
       </div>
-      <button id="start-btn">START GAME</button>
-    </div>
 
-    <div id="pause-screen" class="overlay hidden">
-      <h1>PAUSED</h1>
-      <button id="resume-btn">RESUME</button>
-    </div>
+      <div id="toast" class="toast"><div class="toast-title"></div><div class="toast-sub"></div></div>
+      <div id="countdown" class="countdown hidden"></div>
 
-    <div id="gameover-screen" class="overlay hidden">
-      <h1>GAME OVER</h1>
-      <p>Your score: <span id="final-score">0</span></p>
-      <p id="new-best" class="hidden">🏆 New best score!</p>
-      <button id="restart-btn">PLAY AGAIN</button>
-    </div>
+      <!-- ================= MENU ================= -->
+      <section id="screen-menu" class="screen active">
+        <div class="wallet-pill top-right"><i class="coin-ico"></i><span class="wallet-amt">0</span></div>
+        <div class="brand">
+          <div class="brand-kicker">ARCADE HIGHWAY RACER</div>
+          <h1 class="logo">TURBO<span>LANE</span></h1>
+        </div>
 
-    <div id="touch-controls">
-      <button id="btn-left" aria-label="Left">◀</button>
-      <button id="btn-boost" aria-label="Boost">▲</button>
-      <button id="btn-right" aria-label="Right">▶</button>
+        <div class="diff-select" role="radiogroup" aria-label="Difficulty">
+          <button data-diff="easy">EASY</button>
+          <button data-diff="normal">NORMAL</button>
+          <button data-diff="hard">HARD</button>
+        </div>
+
+        <button id="play-btn" class="btn btn-primary btn-xl">▶ RACE</button>
+
+        <div class="menu-grid">
+          <button class="btn btn-ghost" data-go="garage">🏎 Garage</button>
+          <button class="btn btn-ghost" data-go="leaderboard">🏆 Records</button>
+          <button class="btn btn-ghost" data-go="settings">⚙ Settings</button>
+          <button class="btn btn-ghost" data-go="help">❔ How to play</button>
+        </div>
+
+        <div class="menu-foot">BEST <b id="menu-best">0</b> · Press <kbd>Enter</kbd> to race</div>
+      </section>
+
+      <!-- ================= GARAGE ================= -->
+      <section id="screen-garage" class="screen">
+        <header class="screen-head">
+          <button class="back" data-go="menu" aria-label="Back">←</button>
+          <h2>Garage</h2>
+          <div class="wallet-pill"><i class="coin-ico"></i><span class="wallet-amt">0</span></div>
+        </header>
+        <div id="garage-list" class="scroll-list"></div>
+      </section>
+
+      <!-- ================= LEADERBOARD ================= -->
+      <section id="screen-leaderboard" class="screen">
+        <header class="screen-head">
+          <button class="back" data-go="menu" aria-label="Back">←</button>
+          <h2>Records</h2>
+          <span></span>
+        </header>
+        <div class="career" id="career"></div>
+        <div class="scroll-list"><table class="board"><thead><tr><th>#</th><th>Score</th><th>KM</th><th>Car</th><th>Mode</th></tr></thead><tbody id="board-body"></tbody></table></div>
+      </section>
+
+      <!-- ================= SETTINGS ================= -->
+      <section id="screen-settings" class="screen">
+        <header class="screen-head">
+          <button class="back" data-go="back" aria-label="Back">←</button>
+          <h2>Settings</h2>
+          <span></span>
+        </header>
+        <div class="settings">
+          <label class="setting"><span>Cockpit camera (driver view)</span><input type="checkbox" id="set-cockpit" /><i class="switch"></i></label>
+          <label class="setting"><span>Sound effects</span><input type="checkbox" id="set-sound" /><i class="switch"></i></label>
+          <label class="setting"><span>Engine sound</span><input type="checkbox" id="set-engine" /><i class="switch"></i></label>
+          <label class="setting"><span>Screen shake</span><input type="checkbox" id="set-shake" /><i class="switch"></i></label>
+          <label class="setting"><span>Particles &amp; effects</span><input type="checkbox" id="set-particles" /><i class="switch"></i></label>
+          <label class="setting"><span>Vibration (mobile)</span><input type="checkbox" id="set-vibrate" /><i class="switch"></i></label>
+          <button id="reset-btn" class="btn btn-danger btn-sm">Reset all progress</button>
+        </div>
+      </section>
+
+      <!-- ================= HELP ================= -->
+      <section id="screen-help" class="screen">
+        <header class="screen-head">
+          <button class="back" data-go="menu" aria-label="Back">←</button>
+          <h2>How to play</h2>
+          <span></span>
+        </header>
+        <div class="scroll-list help">
+          <h3>Controls</h3>
+          <ul class="keys">
+            <li><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd> Steer</li>
+            <li><kbd>↑</kbd> / <kbd>W</kbd> Accelerate</li>
+            <li><kbd>↓</kbd> / <kbd>S</kbd> Brake</li>
+            <li><kbd>Space</kbd> / <kbd>Shift</kbd> Nitro (2× score)</li>
+            <li><kbd>P</kbd> / <kbd>Esc</kbd> Pause</li>
+            <li><kbd>C</kbd> Switch camera (cockpit / top)</li>
+          </ul>
+          <h3>Scoring</h3>
+          <p>Pass traffic closely for <b>NEAR MISS</b> bonuses. Chain them to build a combo up to <b>x10</b>. Coins go to your wallet for new cars. Every 1.6 km is a new level with a new location and heavier traffic.</p>
+          <h3>Power-ups</h3>
+          <ul class="legend">
+            <li><i style="background:#22d3ee"></i><b>Shield</b> absorbs one crash</li>
+            <li><i style="background:#f43f5e"></i><b>Magnet</b> pulls in nearby coins</li>
+            <li><i style="background:#f97316"></i><b>Nitro</b> refills your tank</li>
+            <li><i style="background:#a855f7"></i><b>Slow-mo</b> slows down traffic</li>
+            <li><i style="background:#ec4899"></i><b>Heart</b> gives an extra life</li>
+          </ul>
+          <h3>Hazards</h3>
+          <p><b>Oil slicks</b> make you skid. <b>Cones</b> kill your speed and combo. <b>Police cars</b> change lanes — watch their blinkers!</p>
+        </div>
+      </section>
+
+      <!-- ================= PAUSE ================= -->
+      <section id="screen-pause" class="screen">
+        <h2 class="big-title">PAUSED</h2>
+        <div class="stack">
+          <button id="resume-btn" class="btn btn-primary">▶ Resume</button>
+          <button id="restart-btn" class="btn btn-ghost">↻ Restart</button>
+          <button class="btn btn-ghost" data-go="settings">⚙ Settings</button>
+          <button id="quit-btn" class="btn btn-ghost">⌂ Main menu</button>
+        </div>
+      </section>
+
+      <!-- ================= GAME OVER ================= -->
+      <section id="screen-over" class="screen">
+        <h2 class="big-title danger">WRECKED</h2>
+        <div id="new-best" class="badge hidden">★ NEW RECORD ★</div>
+        <div class="final-score"><small>FINAL SCORE</small><span id="final-score">0</span></div>
+        <div class="stats-grid">
+          <div><small>Distance</small><b id="st-dist">0</b></div>
+          <div><small>Level</small><b id="st-level">1</b></div>
+          <div><small>Near misses</small><b id="st-near">0</b></div>
+          <div><small>Best combo</small><b id="st-combo">x1</b></div>
+          <div class="wide"><small>Coins earned</small><b><i class="coin-ico"></i> <span id="st-coins">0</span></b></div>
+        </div>
+        <div class="stack">
+          <button id="retry-btn" class="btn btn-primary">↻ Race again</button>
+          <div class="row">
+            <button class="btn btn-ghost" data-go="garage">🏎 Garage</button>
+            <button id="over-menu-btn" class="btn btn-ghost">⌂ Menu</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TOUCH ================= -->
+      <div id="touch-controls">
+        <div class="tc-group">
+          <button data-key="left" aria-label="Steer left">◀</button>
+          <button data-key="right" aria-label="Steer right">▶</button>
+        </div>
+        <div class="tc-group">
+          <button data-key="brake" class="tc-brake" aria-label="Brake">▼</button>
+          <button data-key="nitro" class="tc-nitro" aria-label="Nitro">N₂O</button>
+          <button data-key="gas" class="tc-gas" aria-label="Accelerate">▲</button>
+        </div>
+      </div>
     </div>
   </div>
 
